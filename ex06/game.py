@@ -206,6 +206,7 @@ def main():
                     score_time = 0
 
         scrn_sfc.blit(img_chara[(count % 4)], [120, y])    # キャラクターの描画 
+        
         # 経過時間の表示(内野)
         if death_reason == 0:
             score_time = time.time() - s_time
