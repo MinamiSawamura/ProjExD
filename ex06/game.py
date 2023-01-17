@@ -53,7 +53,7 @@ def jamp_chara():  # キャラクターのジャンプ関数
 
 def main():
     global jamp, y
-    pg.display.set_caption("ゲームタイトル（仮）")       # ゲームタイトル
+    pg.display.set_caption("棒人間RUN!")       # ゲームタイトル
     w = 1920
     h = 1060
     scrn_sfc = pg.display.set_mode((w, h))        # 画面サイズ
