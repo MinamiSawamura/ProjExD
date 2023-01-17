@@ -50,9 +50,34 @@ def jamp_chara():  # キャラクターのジャンプ関数
         y = 580
     return y
 
+chara_live = 1   # キャラクターの生存判定
+death_reason = 0    # 1:穴, 2:岩
+
+def background(scrn_sfc, img_bg, img_iwa, count, x):
+    global y, chara_live, death_reason
+    # 背景スクロールの描画
+    num = 0
+    hantei = 0
+    for i in range(17):
+        num = count
+        hantei = int(i+num)
+        if num+16 >= len(syougai):
+            hantei = int(i+num) % len(syougai)
+        if syougai[hantei] > 0:
+            scrn_sfc.blit(img_bg[0], [i*160-x, 0])  # 地面がある背景の描画
+            if syougai[hantei] == 2:  # 岩の描画
+                scrn_sfc.blit(img_iwa, [i*160-x, 700])
+                if i == 1 and x >= 30 and y >= 460 and chara_live == 1:
+                    chara_live = 2
+                    death_reason = 2
+        elif syougai[hantei] == 0:
+            scrn_sfc.blit(img_bg[1], [i*160-x, 0])  # 地面が無い背景（穴）の描画
+            if i == 1 and x >= 30 and y == 580 and chara_live == 1:
+                chara_live = 2
+                death_reason = 1
 
 def main():
-    global jamp, y
+    global jamp, y, chara_live, death_reason
     pg.display.set_caption("棒人間RUN!")       # ゲームタイトル
     w = 1920
     h = 1060
@@ -76,8 +101,6 @@ def main():
     ]
     img_iwa = pg.image.load("ex06/iwa.png").convert_alpha()
     img_kumo = pg.image.load("ex06/kumo.png").convert_alpha()
-    chara_live = 1   # キャラクターの生存判定
-    death_reason = 0    # 1:穴, 2:岩
     tmr = 0
     count = 0
 
@@ -110,54 +133,33 @@ def main():
                 if event.key == pg.K_F2:    # F2キーが押されると元に戻る
                     screen = pg.display.set_mode((1920, 1060))
                 if event.key == pg.K_SPACE:  # スペースキー
-                    if jamp == False and chara_live == True:
+                    if jamp == False and chara_live == 1:
                         jamp = True
                         y += 1
+        
 
-        # 背景スクロールの描画
-        if chara_live:      # キャラクターが生きていたら
+        if chara_live > 0:      # キャラクターが生きていたら
             x = (tmr % 40)*4
             if x == 0:
                 count += 1
                 if count >= len(syougai):
                     count = 0
-        for i in range(17):
-            num = count
-            hantei = int(i+num)
-            if num+16 >= len(syougai):
-                hantei = int(i+num) % len(syougai)
-            if syougai[hantei] > 0:
-                scrn_sfc.blit(img_bg[0], [i*160-x, 0])  # 地面がある背景の描画
-                if syougai[hantei] == 2:  # 岩の描画
-                    scrn_sfc.blit(img_iwa, [i*160-x, 700])
-                    if i == 1 and x >= 30 and y >= 460:
-                        chara_live = 0
-                        death_reason = 2
-            elif syougai[hantei] == 0:
-                scrn_sfc.blit(img_bg[1], [i*160-x, 0])  # 地面が無い背景（穴）の描画
-                if i == 1 and x >= 30 and y == 580:
-                    chara_live = 0
-                    death_reason = 1
-
-        # 経過時間の表示(内野)
-        if death_reason == 0:
-            score_time = time.time() - s_time
-        txt = fonto.render(str(math.floor(score_time*10)), True, (0, 0, 0))
-        
-        scrn_sfc.blit(txt, (0, 0))
+            if chara_live == 2:
+                chara_live = 0
+        background(scrn_sfc, img_bg, img_iwa, count, x)
 
         if chara_live:
             if tmr % 50 == 0:
                 y = jamp_chara()
-            scrn_sfc.blit(img_chara[(count % 4)], [120, y])    # キャラクターの描画  
         else:
             if death_reason == 1:
                 if y < 1920+240:
-                    scrn_sfc.blit(img_bg[1], (130, 0))
+                    background(scrn_sfc, img_bg, img_iwa, count, x)
                     y += 10         # キャラクターが（穴によって）死んだ判定になったら穴の底に落ちる
-                    scrn_sfc.blit(img_chara[(count % 4)], [120, y])    # キャラクターの描画 
+                    
                 # GameOver機能(内野)
                 else:
+                    background(scrn_sfc, img_bg, img_iwa, count, x)
                     scrn_sfc.blit(gameover_text, gameover_text_rct)
                     scrn_sfc.blit(gameover_comment, gameover_comment_rct)
                     scrn_sfc.blit(gameover_restart, gameover_restart_rct)
@@ -181,8 +183,7 @@ def main():
                         score_time = 0
 
             elif death_reason == 2:
-                scrn_sfc.blit(img_bg[0], [i*160-x, 0])
-                scrn_sfc.blit(img_chara[(count % 4)], [120, y])    # キャラクターの描画
+                background(scrn_sfc, img_bg, img_iwa, count, x)
                 scrn_sfc.blit(gameover_text, gameover_text_rct)
                 scrn_sfc.blit(gameover_comment, gameover_comment_rct)
                 scrn_sfc.blit(gameover_restart, gameover_restart_rct)
@@ -203,7 +204,14 @@ def main():
                     count = 0
                     s_time = time.time()
                     score_time = 0
-        
+
+        scrn_sfc.blit(img_chara[(count % 4)], [120, y])    # キャラクターの描画 
+        # 経過時間の表示(内野)
+        if death_reason == 0:
+            score_time = time.time() - s_time
+        txt = fonto.render(str(math.floor(score_time*10)), True, (0, 0, 0))
+        scrn_sfc.blit(txt, (0, 0))
+
         # 雲を表示（吉田）
         scrn_sfc.blit(img_kumo, (200, 100))
 
